@@ -31,9 +31,25 @@ module.exports = (options = {}) => {
     replaceComponentName = options.replaceComponentName || {},
     isProduction = process.env.NODE_ENV === "production" ||
       process.env.production !== undefined,
-    extensions = [ "js", "jsx", "ts", "tsx" ],
+    extensions = [ ".js", ".jsx", ".ts", ".tsx" ],
     loaderName = "?solid-hot-loader",
-    proxiedFiles = [];
+    proxiedFiles = [],
+    importMap = {},
+    isImportOfProxyFile = (id) => {
+      if (!extensions.includes(path.extname(id))) return false;
+
+      for (const file of proxiedFiles) {
+        if(importMap[file]) {
+          for (const importName of importMap[file]) {
+            if (id.indexOf(importName) >= 0) {
+              return true;
+            }
+          }
+        }
+      }
+
+      return false;
+}
 
   return {
     name: "solidHotLoader",
@@ -43,6 +59,14 @@ module.exports = (options = {}) => {
         return null;
 
       const id = path.resolve(path.dirname(importer), importee);
+
+      if (!importMap[importer]) {
+        importMap[importer] = [];
+      }
+
+      if (!importMap[importer].includes(id)) {
+        importMap[importer].push(id);
+      }
 
       if (path.extname(id) !== "") {
         if (filter(id)) {
@@ -54,7 +78,7 @@ module.exports = (options = {}) => {
       }
 
       for(const ext of extensions) {
-        const file = `${id}.${ext}`;
+        const file = `${id}${ext}`;
         if(fs.existsSync(file) && filter(file)) {
           proxiedFiles.push(file);
           return `${file}${loaderName}`;
@@ -80,11 +104,15 @@ module.exports = (options = {}) => {
     },
 
     transform: async function(code, id) {
-      if (!isProduction && this.getModuleInfo(id).isEntry && !filter(id)) {
+      if (isProduction) return
+
+      const isEntry = this.getModuleInfo(id).isEntry;
+      if (!filter(id) && (isEntry || isImportOfProxyFile(id))) {
         code = `
           module && module.hot && module.hot.accept(() => location.reload());
           ${code}
         `;
+
         return { code, map: null };
       }
 
