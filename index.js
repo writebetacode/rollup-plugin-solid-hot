@@ -28,17 +28,16 @@ function hmrCode(file, compName) {
 
 module.exports = (options = {}) => {
   const filter = createFilter(options.include),
-    replaceComponentName = options.replaceComponentName || {},
     isProduction = process.env.NODE_ENV === "production" ||
       process.env.production !== undefined,
     extensions = [ ".js", ".jsx", ".ts", ".tsx" ],
     loaderName = "?solid-hot-loader",
-    proxiedFiles = [],
+    compFiles = [],
     importMap = {},
-    isImportOfProxyFile = (id) => {
+    isImportedByComponentFile = (id) => {
       if (!extensions.includes(path.extname(id))) return false;
 
-      for (const file of proxiedFiles) {
+      for (const file of compFiles) {
         if(importMap[file]) {
           for (const importName of importMap[file]) {
             if (id.indexOf(importName) >= 0) {
@@ -49,13 +48,13 @@ module.exports = (options = {}) => {
       }
 
       return false;
-}
+    }
 
   return {
     name: "solidHotLoader",
 
     resolveId: async function(importee, importer) {
-      if (isProduction || !importer || proxiedFiles.includes(importee))
+      if (isProduction || !importer || compFiles.includes(importee))
         return null;
 
       const id = path.resolve(path.dirname(importer), importee);
@@ -70,7 +69,7 @@ module.exports = (options = {}) => {
 
       if (path.extname(id) !== "") {
         if (filter(id)) {
-          proxiedFiles.push(id);
+          compFiles.push(id);
           return `${id}${loaderName}`;
         }
 
@@ -80,7 +79,7 @@ module.exports = (options = {}) => {
       for(const ext of extensions) {
         const file = `${id}${ext}`;
         if(fs.existsSync(file) && filter(file)) {
-          proxiedFiles.push(file);
+          compFiles.push(file);
           return `${file}${loaderName}`;
         }
       }
@@ -93,10 +92,6 @@ module.exports = (options = {}) => {
         let file = id.replace(loaderName, ""),
           compName = path.parse(file).name;
 
-        if (replaceComponentName[compName]) {
-          compName = replaceComponentName[compName];
-        }
-
         return hmrCode(file, compName);
       }
 
@@ -107,7 +102,7 @@ module.exports = (options = {}) => {
       if (isProduction) return
 
       const isEntry = this.getModuleInfo(id).isEntry;
-      if (!filter(id) && (isEntry || isImportOfProxyFile(id))) {
+      if (!filter(id) && (isEntry || isImportedByComponentFile(id))) {
         code = `
           module && module.hot && module.hot.accept(() => location.reload());
           ${code}
