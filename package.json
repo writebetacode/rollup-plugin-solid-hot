@@ -1,0 +1,45 @@
+{
+  "name": "rollup-plugin-solid-hot-loader",
+  "version": "1.0.0",
+  "description": "rollup plugin to enable hot module replacement for solid-js components",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "rollup -c",
+    "clean": "shx rm -rf node_modules .gitignore index.js README.md rollup.config.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/writebetacode/rollup-plugin-solid-hot.git"
+  },
+  "keywords": [
+    "solid-js",
+    "solid",
+    "js",
+    "hot",
+    "module",
+    "replacement",
+    "hmr",
+    "rollup",
+    "plugin",
+    "rollup-plugin"
+  ],
+  "author": "Michael, Scholle",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/writebetacode/rollup-plugin-solid-hot/issues"
+  },
+  "homepage": "https://github.com/writebetacode/rollup-plugin-solid-hot#readme",
+  "peerDependencies": {
+    "solid-js": "^0.21.5"
+  },
+  "dependencies": {
+    "@rollup/pluginutils": "^4.1.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-buble": "^0.21.3",
+    "rollup": "^2.33.1",
+    "rollup-plugin-terser": "^7.0.2",
+    "shx": "^0.3.3",
+    "solid-js": "^0.21.5"
+  }
+}
