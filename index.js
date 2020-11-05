@@ -2,36 +2,19 @@ import { createFilter } from "@rollup/pluginutils";
 const fs = require("fs");
 const path = require("path");
 
-function hmrCode(file, compName) {
-  return `
-    import { createSignal, untrack } from "solid-js";
-    import Comp from "${file}";
-    const [s, set] = createSignal(Comp);
-    export const ${compName} = props => {
-      let c;
-      return () => (c = s()) && untrack(() => c(props));
-    };
-
-    export default ${compName};
-    module && module.hot && module.hot.accept(({disposed}) => {
-      for(const id of disposed.filter(id => id != module.id)) {
-        require(id);
-      }
-      set(Comp);
-    });
-  `;
-}
-
 function fetchDefaultExport(file) {
   const code = fs.readFileSync(file, "utf-8"),
     defaultExportReg = /export default/g,
     match = defaultExportReg.exec(code);
 
   if (match) {
-    const index = match.index + 15,
-      exportName = code.substring(index, code.indexOf("\n", index));
-
-    return exportName.trim().replace(";", "");
+    const index = match.index + 15;
+    for (let i = index; i < code.length; i++) {
+      const char = code[i];
+      if (char === "\n" || char === ";" || char === " ") {
+        return code.substring(index, i).trim();
+      }
+    }
   }
 
   return "";
@@ -77,9 +60,25 @@ module.exports = (options = {}) => {
     load: async function(id) {
       if (!isProduction && id.endsWith(loaderName)) {
         let file = id.replace(loaderName, ""),
-          compName = fetchDefaultExport(file);
+          exportName = fetchDefaultExport(file);
 
-        return hmrCode(file, compName);
+        return `
+          import { createSignal, untrack } from "solid-js";
+          import Comp from "${file}";
+          const [s, set] = createSignal(Comp);
+          export const ${exportName} = props => {
+            let c;
+            return () => (c = s()) && untrack(() => c(props));
+          };
+
+          export default ${exportName};
+          module && module.hot && module.hot.accept(({disposed}) => {
+            for(const id of disposed.filter(id => id != module.id)) {
+              require(id);
+            }
+            set(Comp);
+          });
+        `;
       }
 
       return null;
