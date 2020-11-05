@@ -22,36 +22,31 @@ function fetchDefaultExport(file) {
 
 module.exports = (options = {}) => {
   const filter = createFilter(options.include),
-    isProduction = process.env.NODE_ENV === "production" ||
-      process.env.production !== undefined,
+    env = process.env,
+    isProduction = env.NODE_ENV === "production" || env.production !== undefined,
     extensions = [ ".js", ".jsx", ".ts", ".tsx" ],
-    loaderName = "?solid-hot-loader",
-    compFiles = [];
+    loaderName = "?solid-hot-loader";
 
   return {
     name: "solidHotLoader",
 
     resolveId: async function(importee, importer) {
-      if (isProduction || !importer || compFiles.includes(importee))
-        return null;
-
-      const id = path.resolve(path.dirname(importer), importee);
-
-      if (path.extname(id) !== "") {
-        if (filter(id)) {
-          compFiles.push(id);
-          return `${id}${loaderName}`;
-        }
-
+      if (isProduction || !importer || importer.includes(loaderName)){
         return null;
       }
 
-      for(const ext of extensions) {
-        const file = `${id}${ext}`;
-        if(fs.existsSync(file) && filter(file)) {
-          compFiles.push(file);
-          return `${file}${loaderName}`;
+      const id = path.resolve(path.dirname(importer), importee);
+      if (path.extname(id) === "") {
+        for (const ext of extensions) {
+          const file = `${id}${ext}`;
+          if (fs.existsSync(file) && filter(file)) {
+            return `${file}${loaderName}`;
+          }
         }
+      }
+
+      if (filter(id)) {
+        return `${id}${loaderName}`;
       }
 
       return null;
@@ -85,10 +80,7 @@ module.exports = (options = {}) => {
     },
 
     transform: async function(code, id) {
-      if (isProduction) return
-
-      const isEntry = this.getModuleInfo(id).isEntry;
-      if (!filter(id) && isEntry) {
+      if (!isProduction && !filter(id) && this.getModuleInfo(id).isEntry) {
         code = `
           module && module.hot && module.hot.accept(() => location.reload());
           ${code}

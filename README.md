@@ -44,7 +44,7 @@ export default {
 }
 ```
 
-## Make sure to export each component as the default export.
+## Make sure to export each component as the default export
 
 ```js
 /*
