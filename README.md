@@ -1,6 +1,6 @@
 # rollup-plugin-solid-hot-loader
 
-A simple solid-js Hot Module Replacement loader for [Rollup](https://rollupjs.org) when used with [Nollup](https://github.com/PepsRyuu/nollup). As this loader currently only wraps your Solid Components, it does not preserve downstream state so the Component and all it's children are replaced.  This loader also provides basic live-reloading support for all other javascript files imported by your components.
+A simple solid-js Hot Module Replacement loader for [Rollup](https://rollupjs.org) when used with [Nollup](https://github.com/PepsRyuu/nollup). As this loader currently only wraps your Solid Components, it does not preserve downstream state so the Component and all of it's children will be replaced.  This loader also provides basic live-reloading support for the entry file.
 
 ## Installation
 
@@ -48,17 +48,12 @@ export default {
 
 ```js
 /*
-  The HMR wrapping process exports itself as both default and as a named export.
-  The named export will match the filename of the component.
+  The HMR Wrapped Component will export itself as both the default and as a
+  named export, matching whatever the `export default <Component-Name>` was set
+  to.
 
-  For example the following component can be imported with either:
-
-  import { App } from ".../App/App";  -- OR -- import App from ".../App/App";
+  src/components/App/App.jsx
 */
-
-
-// src/components/App/App.jsx
-
 export const App = () => {
   return (
     <div class="app">
@@ -76,7 +71,7 @@ export default App;
 
 Type: `String | RegExp | Array[...String|RegExp]`
 
-A [minimatch pattern](https://github.com/isaacs/minimatch), or array of patterns, which specifies the files in the build the plugin should operate on. When relying on Babel configuration files you cannot include files already excluded there.
+A [minimatch pattern](https://github.com/isaacs/minimatch), or array of patterns, which specifies all of the Solid Component files in the build the plugin should operate on.
 
 ## Notes
 
