@@ -13,17 +13,28 @@ function hmrCode(file, compName) {
     };
 
     export default ${compName};
-    if(module && module.hot) {
-      module.hot.accept(() => {});
-
-      module.hot.addStatusHandler(() => {
-        if (module.hot.status() === "apply") {
-          require(module.id);
-          set(Comp);
-        }
-      });
-    }
+    module && module.hot && module.hot.accept(({disposed}) => {
+      for(const id of disposed.filter(id => id != module.id)) {
+        require(id);
+      }
+      set(Comp);
+    });
   `;
+}
+
+function fetchDefaultExport(file) {
+  const code = fs.readFileSync(file, "utf-8"),
+    defaultExportReg = /export default/g,
+    match = defaultExportReg.exec(code);
+
+  if (match) {
+    const index = match.index + 15,
+      exportName = code.substring(index, code.indexOf("\n", index));
+
+    return exportName.trim().replace(";", "");
+  }
+
+  return "";
 }
 
 module.exports = (options = {}) => {
@@ -32,23 +43,7 @@ module.exports = (options = {}) => {
       process.env.production !== undefined,
     extensions = [ ".js", ".jsx", ".ts", ".tsx" ],
     loaderName = "?solid-hot-loader",
-    compFiles = [],
-    importMap = {},
-    isImportedByComponentFile = (id) => {
-      if (!extensions.includes(path.extname(id))) return false;
-
-      for (const file of compFiles) {
-        if(importMap[file]) {
-          for (const importName of importMap[file]) {
-            if (id.indexOf(importName) >= 0) {
-              return true;
-            }
-          }
-        }
-      }
-
-      return false;
-    }
+    compFiles = [];
 
   return {
     name: "solidHotLoader",
@@ -58,14 +53,6 @@ module.exports = (options = {}) => {
         return null;
 
       const id = path.resolve(path.dirname(importer), importee);
-
-      if (!importMap[importer]) {
-        importMap[importer] = [];
-      }
-
-      if (!importMap[importer].includes(id)) {
-        importMap[importer].push(id);
-      }
 
       if (path.extname(id) !== "") {
         if (filter(id)) {
@@ -90,7 +77,7 @@ module.exports = (options = {}) => {
     load: async function(id) {
       if (!isProduction && id.endsWith(loaderName)) {
         let file = id.replace(loaderName, ""),
-          compName = path.parse(file).name;
+          compName = fetchDefaultExport(file);
 
         return hmrCode(file, compName);
       }
@@ -102,16 +89,14 @@ module.exports = (options = {}) => {
       if (isProduction) return
 
       const isEntry = this.getModuleInfo(id).isEntry;
-      if (!filter(id) && (isEntry || isImportedByComponentFile(id))) {
+      if (!filter(id) && isEntry) {
         code = `
           module && module.hot && module.hot.accept(() => location.reload());
           ${code}
         `;
-
-        return { code, map: null };
       }
 
-      return
+      return { code };
     }
   };
 }
