@@ -1,19 +1,13 @@
-
-import buble from '@rollup/plugin-buble';
 import pkg from './package.json';
+import buble from '@rollup/plugin-buble';
 import { terser } from "rollup-plugin-terser";
 
-const external = Object.keys(pkg.dependencies).concat('path');
+const external = Object.keys(pkg.dependencies).concat(...[ "fs", "path" ]);
 
 export default {
-  input: 'index.js',
+  input: './src/index.js',
   plugins: [
-    buble({
-      transforms: {
-        asyncAwait: false,
-        forOf: false
-      }
-    }),
+    buble({ transforms: { asyncAwait: false, forOf: false }}),
     terser()
   ],
   external,

@@ -1,29 +1,11 @@
 import { createFilter } from "@rollup/pluginutils";
-const fs = require("fs");
-const path = require("path");
-
-function fetchDefaultExport(file) {
-  const code = fs.readFileSync(file, "utf-8"),
-    defaultExportReg = /export default/g,
-    match = defaultExportReg.exec(code);
-
-  if (match) {
-    const index = match.index + 15;
-    for (let i = index; i < code.length; i++) {
-      const char = code[i];
-      if (char === "\n" || char === ";" || char === " ") {
-        return code.substring(index, i).trim();
-      }
-    }
-  }
-
-  return "";
-}
+import { fetchDefaultExport } from "./utils";
+import { dirname, extname, resolve } from "path";
+import { existsSync } from "fs";
 
 module.exports = (options = {}) => {
   const filter = createFilter(options.include),
-    env = process.env,
-    isProduction = env.NODE_ENV === "production" || env.production !== undefined,
+    isProduction = process.env.NODE_ENV === "production",
     extensions = [ ".js", ".jsx", ".ts", ".tsx" ],
     loaderName = "?solid-hot-loader";
 
@@ -31,22 +13,22 @@ module.exports = (options = {}) => {
     name: "solidHotLoader",
 
     resolveId: async function(importee, importer) {
-      if (isProduction || !importer || importer.includes(loaderName)){
+      if (isProduction || !importer || importer.includes(loaderName)) {
         return null;
       }
 
-      const id = path.resolve(path.dirname(importer), importee);
-      if (path.extname(id) === "") {
+      const id = resolve(dirname(importer), importee);
+      if (extname(id) === "") {
         for (const ext of extensions) {
           const file = `${id}${ext}`;
-          if (fs.existsSync(file) && filter(file)) {
+          if (filter(file) && existsSync(file)) {
             return `${file}${loaderName}`;
           }
         }
-      }
-
-      if (filter(id)) {
-        return `${id}${loaderName}`;
+      } else {
+        if (filter(id)) {
+          return `${id}${loaderName}`;
+        }
       }
 
       return null;
@@ -57,16 +39,22 @@ module.exports = (options = {}) => {
         let file = id.replace(loaderName, ""),
           exportName = fetchDefaultExport(file);
 
+        let namedExport = "";
+        if (exportName != "") {
+          namedExport = `, Wrapped as ${exportName}`;
+        }
+
         return `
           import { createSignal, untrack } from "solid-js";
           import Comp from "${file}";
-          const [s, set] = createSignal(Comp);
-          export const ${exportName} = props => {
-            let c;
-            return () => (c = s()) && untrack(() => c(props));
-          };
+          const [s, set] = createSignal(Comp),
+            Wrapped = props => {
+              let c;
+              return () => (c = s()) && untrack(() => c(props));
+            };
 
-          export default ${exportName};
+          export { Wrapped as default${namedExport} };
+
           module && module.hot && module.hot.accept(({disposed}) => {
             for(const id of disposed.filter(id => id != module.id)) {
               require(id);
@@ -90,4 +78,4 @@ module.exports = (options = {}) => {
       return { code };
     }
   };
-}
+};

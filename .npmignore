@@ -1,4 +1,4 @@
 .github/
 node_modules/
-index.js
+src/
 rollup.comfig.js
