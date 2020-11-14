@@ -71,7 +71,7 @@ export default App;
 
 Type: `String | RegExp | Array[...String|RegExp]`
 
-A [minimatch pattern](https://github.com/isaacs/minimatch), or array of patterns, which specifies all of the Solid Component files in the build the plugin should operate on.
+A [minimatch pattern](https://github.com/isaacs/minimatch), or array of patterns, which specifies all of the Solid Component files the plugin should operate on.
 
 ## Notes
 
