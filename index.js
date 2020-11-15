@@ -1,13 +1,20 @@
 import { createFilter } from "@rollup/pluginutils";
-import { fetchDefaultExport } from "./utils";
 import { dirname, extname, resolve } from "path";
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
+import { Parser } from "acorn";
+import { base, simple } from "acorn-walk";
+import { extend } from "acorn-jsx-walk";
+
 
 module.exports = (options = {}) => {
   const filter = createFilter(options.include),
     isProduction = process.env.NODE_ENV === "production",
     extensions = [ ".js", ".jsx", ".ts", ".tsx" ],
-    loaderName = "?solid-hot-loader";
+    loaderName = "?solid-hot-loader",
+    JSXParser = Parser.extend(require("acorn-jsx")()),
+    acornOpts = { "sourceType": "module", "ecmaVersion": "2020" };
+
+  extend(base);
 
   return {
     name: "solidHotLoader",
@@ -37,12 +44,15 @@ module.exports = (options = {}) => {
     load: async function(id) {
       if (!isProduction && id.endsWith(loaderName)) {
         let file = id.replace(loaderName, ""),
-          exportName = fetchDefaultExport(file);
+          code = readFileSync(file, "utf-8"),
+          ast = JSXParser.parse(code, acornOpts),
+          namedExport = "";
 
-        let namedExport = "";
-        if (exportName != "") {
-          namedExport = `, Wrapped as ${exportName}`;
-        }
+        simple(ast, {
+          ExportDefaultDeclaration(node) {
+            namedExport = `, Wrapped as ${node.declaration.name}`;
+          }
+        });
 
         return `
           import { createSignal, untrack } from "solid-js";

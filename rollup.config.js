@@ -5,7 +5,7 @@ import { terser } from "rollup-plugin-terser";
 const external = Object.keys(pkg.dependencies).concat(...[ "fs", "path" ]);
 
 export default {
-  input: './src/index.js',
+  input: './index.js',
   plugins: [
     buble({ transforms: { asyncAwait: false, forOf: false }}),
     terser()

@@ -1,6 +1,6 @@
 {
   "name": "rollup-plugin-solid-hot-loader",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "rollup plugin to enable hot module replacement for solid-js components",
   "main": "dist/index.js",
   "scripts": {
@@ -33,7 +33,11 @@
     "solid-js": "^0.22.0"
   },
   "dependencies": {
-    "@rollup/pluginutils": "^4.1.0"
+    "@rollup/pluginutils": "^4.1.0",
+    "acorn": "^8.0.4",
+    "acorn-jsx": "^5.3.1",
+    "acorn-jsx-walk": "^2.0.0",
+    "acorn-walk": "^8.0.0"
   },
   "devDependencies": {
     "@rollup/plugin-buble": "^0.21.3",
