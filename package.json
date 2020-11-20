@@ -41,8 +41,8 @@
   },
   "devDependencies": {
     "@rollup/plugin-buble": "^0.21.3",
-    "rollup": "^2.33.2",
+    "rollup": "^2.33.3",
     "rollup-plugin-terser": "^7.0.2",
-    "solid-js": "^0.22.0"
+    "solid-js": "^0.22.4"
   }
 }
