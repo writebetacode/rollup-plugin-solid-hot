@@ -1,6 +1,6 @@
 # rollup-plugin-solid-hot-loader
 
-A simple solid-js Hot Module Replacement loader for [Rollup](https://rollupjs.org) when used with [Nollup](https://github.com/PepsRyuu/nollup). As this loader currently only wraps your Solid Components, it does not preserve downstream state so the Component and all of it's children will be replaced.  This loader also provides basic live-reloading support for the entry file.
+A simple solid-js Hot Module Replacement loader for [Rollup](https://rollupjs.org) when used with [Nollup](https://github.com/PepsRyuu/nollup). As this loader currently only wraps your Solid Components, it does not preserve downstream state so the Component and all of it's children will be replaced. This loader also provides basic live-reloading support for the entry file.
 
 ## Installation
 
@@ -44,22 +44,20 @@ export default {
 }
 ```
 
-## Make sure to export each component as the default export
+## Make sure to export your Solid Components
 
 ```js
 /*
-  The HMR Wrapped Component will export itself as both the default and as a
-  named export, matching whatever the `export default <Component-Name>` was set
-  to.
+  The HMR Wrapping process operates on named exports starting with a capital
+  letter and or the default export of the file.
+
+  In the following example, it will wrap the `App` and `default` components in
+  order for them to properly reload without a full refresh of the page.
 
   src/components/App/App.jsx
 */
 export const App = () => {
-  return (
-    <div class="app">
-      Hello World!
-    </div>
-  );
+  return <div class="app">Hello World!</div>;
 };
 
 export default App;
@@ -75,8 +73,8 @@ A [minimatch pattern](https://github.com/isaacs/minimatch), or array of patterns
 
 ## Notes
 
-* External state managers may alleviate the loss of state during module replacement and provide a better development experience (i.e. [storeon](https://github.com/storeon/solidjs)).
+- External state managers may alleviate the loss of state during module replacement and provide a better development experience (i.e. [storeon](https://github.com/storeon/solidjs)).
 
 ## Inspiration
 
-* [solid-hot-loader](https://github.com/ryansolid/solid-hot-loader)
+- [solid-hot-loader](https://github.com/ryansolid/solid-hot-loader)

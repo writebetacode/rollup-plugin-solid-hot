@@ -5,7 +5,6 @@ import { Parser } from "acorn";
 import { base, simple } from "acorn-walk";
 import { extend } from "acorn-jsx-walk";
 
-
 module.exports = (options = {}) => {
   const filter = createFilter(options.include),
     isProduction = process.env.NODE_ENV === "production",
@@ -46,30 +45,86 @@ module.exports = (options = {}) => {
         let file = id.replace(loaderName, ""),
           code = readFileSync(file, "utf-8"),
           ast = JSXParser.parse(code, acornOpts),
-          namedExport = "";
+          exports = {};
 
         simple(ast, {
-          ExportDefaultDeclaration(node) {
-            namedExport = `, Wrapped as ${node.declaration.name}`;
+          ExportDefaultDeclaration() {
+            exports["default"] = 1;
+          },
+          ExportNamedDeclaration(node) {
+            if (node.specifiers.length) {
+              for (let specifier of node.specifiers) {
+                exports[specifier.exported.name] = 1;
+              }
+            } else if (node.declaration) {
+              if (node.declaration.declarations.length) {
+                for (let exp of node.declaration.declarations) {
+                  exports[exp.id.name] = 1;
+                }
+              } else if (node.declaration.id) {
+                exports[node.declaration.id.name] = 1;
+              }
+            }
           }
         });
 
+        let namedExports = Object.keys(exports)
+          .filter(key => key != "default" && key[0].toUpperCase() == key[0]) ||
+          [],
+          importNames = "",
+          exportStmt = "export {",
+          wrappedComponentsCode = "",
+          setComponentsCode = "";
+
+        if (!exports.default && !namedExports.length) {
+          return code;
+        }
+
+        if (exports.default) {
+          importNames = `Comp${namedExports.length ? "," : ""}`;
+          exportStmt = `export { Wrapped as default ${namedExports.length ? "," : "};"}`;
+
+          wrappedComponentsCode = `
+            const [s, set] = createSignal(Comp),
+              Wrapped = (...args) => {
+                let c;
+                return () => (c = s()) && untrack(() => c(...args));
+              };
+          `;
+
+          setComponentsCode = `set(Comp);`;
+        }
+
+        if (namedExports.length) {
+          let wrappedNames = namedExports.map(cmp => `Wrapped${cmp} as ${cmp}`);
+          importNames += `{ ${namedExports.join(", ")} }`;
+          exportStmt += ` ${wrappedNames.join(", ")} };`;
+
+          for (const name of namedExports) {
+            wrappedComponentsCode += `
+              const [s${name}, set${name}] = createSignal(${name}),
+                Wrapped${name} = (...args) => {
+                  let c;
+                  return () => (c = s${name}()) && untrack(() => c(...args));
+                };
+            `;
+
+            setComponentsCode += ` set${name}(${name});`;
+          }
+        }
+
         return `
           import { createSignal, untrack } from "solid-js";
-          import Comp from "${file}";
-          const [s, set] = createSignal(Comp),
-            Wrapped = props => {
-              let c;
-              return () => (c = s()) && untrack(() => c(props));
-            };
+          import ${importNames} from "${file}";
+          ${wrappedComponentsCode}
 
-          export { Wrapped as default${namedExport} };
+          ${exportStmt}
 
           module && module.hot && module.hot.accept(({disposed}) => {
             for(const id of disposed.filter(id => id != module.id)) {
               require(id);
             }
-            set(Comp);
+            ${setComponentsCode}
           });
         `;
       }
