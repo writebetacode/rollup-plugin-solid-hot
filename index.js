@@ -56,13 +56,13 @@ module.exports = (options = {}) => {
               for (let specifier of node.specifiers) {
                 exports[specifier.exported.name] = 1;
               }
-            } else if (node.declaration) {
-              if (node.declaration.declarations.length) {
-                for (let exp of node.declaration.declarations) {
+            } else if (node.declaration.id) {
+              exports[node.declaration.id.name] = 1;
+            } else if (node.declaration.declarations) {
+              for (let exp of node.declaration.declarations) {
+                if (exp.id) {
                   exports[exp.id.name] = 1;
                 }
-              } else if (node.declaration.id) {
-                exports[node.declaration.id.name] = 1;
               }
             }
           }
