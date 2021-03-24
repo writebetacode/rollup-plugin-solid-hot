@@ -1,6 +1,6 @@
 {
   "name": "rollup-plugin-solid-hot-loader",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "description": "rollup plugin to enable hot module replacement for solid-js components",
   "main": "dist/index.js",
   "scripts": {
@@ -21,7 +21,10 @@
     "rollup",
     "plugin",
     "rollup-plugin",
-    "nollup"
+    "nollup",
+    "archived",
+    "obsolete",
+    "deprecated"
   ],
   "author": "Michael, Scholle",
   "license": "MIT",

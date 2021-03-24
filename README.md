@@ -1,4 +1,7 @@
-# rollup-plugin-solid-hot-loader
+# DEPRECATED
+
+This repo will no longer be maintained as it has been made obsolete with the introduction of [solid-refresh](https://github.com/ryansolid/solid-refresh).  Please go use that for you future HMR needs with [solid-js](https://github.com/ryansolid/solid) as it will be actively maintained by the same developer.
+___
 
 A simple solid-js Hot Module Replacement loader for [Rollup](https://rollupjs.org) when used with [Nollup](https://github.com/PepsRyuu/nollup). As this loader currently only wraps your Solid Components, it does not preserve downstream state so the Component and all of it's children will be replaced. This loader also provides basic live-reloading support for the entry file.
 
